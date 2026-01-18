@@ -36,7 +36,24 @@ class SchedulerService:
         for task in tasks:
             if task.enabled and task.cron:
                 try:
-                    trigger = CronTrigger.from_crontab(task.cron)
+                    # 解析cron表达式，支持6字段格式（秒 分 时 日 月 周）
+                    cron_parts = task.cron.strip().split()
+                    if len(cron_parts) == 6:
+                        # 6字段格式：秒 分 时 日 月 周
+                        second, minute, hour, day, month, day_of_week = cron_parts
+                        trigger = CronTrigger(
+                            second=second,
+                            minute=minute,
+                            hour=hour,
+                            day=day,
+                            month=month,
+                            day_of_week=day_of_week,
+                            timezone="Asia/Shanghai"
+                        )
+                    else:
+                        # 标准5字段格式：分 时 日 月 周
+                        trigger = CronTrigger.from_crontab(task.cron)
+                        
                     self.scheduler.add_job(
                         self._run_task,
                         trigger=trigger,
