@@ -36,8 +36,11 @@ ENV PYTHONUNBUFFERED=1
 ENV RUNNING_IN_DOCKER=true
 # 告知 Playwright 在哪里找到浏览器
 ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
-# 设置时区为中国时区
+# 设置时区为中国时区（群晖容器环境需要）
 ENV TZ=Asia/Shanghai
+
+# 创建非root用户并设置权限（群晖容器安全最佳实践）
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
 
 # 从 builder 阶段复制虚拟环境，这样我们就可以使用 playwright 命令
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
@@ -56,6 +59,9 @@ RUN apt-get update \
         netcat-openbsd \
         telnet \
     && playwright install-deps chromium \
+    # 设置正确的时区文件（群晖容器环境需要）
+    && ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && echo ${TZ} > /etc/timezone \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -66,8 +72,13 @@ COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
 COPY --from=frontend-builder /web-ui/dist /app/dist
 
 # 复制应用代码
-# .dockerignore 文件会处理排除项-m
+# .dockerignore 文件会处理排除项
 COPY . .
+
+# 创建应用程序需要读写的目录，并设置正确的权限（群晖容器环境需要）
+RUN mkdir -p /app/images /app/jsonl /app/logs /app/state /app/prompts \
+    && chown -R appuser:appuser /app/images /app/jsonl /app/logs /app/state /app/prompts /app/.env \
+    && chmod -R 755 /app/images /app/jsonl /app/logs /app/state /app/prompts
 
 # 声明服务运行的端口
 EXPOSE 8000

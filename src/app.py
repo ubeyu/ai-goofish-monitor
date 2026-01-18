@@ -23,11 +23,53 @@ scheduler_service = SchedulerService(process_service)
 set_process_service(process_service)
 
 
+async def _check_network_connectivity():
+    """检查网络连通性（群晖容器环境需要）"""
+    print("[网络检查] 正在检查网络连通性...")
+    import asyncio
+    import socket
+    
+    # 测试的目标地址
+    test_targets = [
+        ("www.taobao.com", 443),
+        ("www.baidu.com", 443),
+        ("ntfy.sh", 443)  # ntfy通知服务
+    ]
+    
+    for host, port in test_targets:
+        try:
+            # 异步测试TCP连接
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port),
+                timeout=10
+            )
+            writer.close()
+            await writer.wait_closed()
+            print(f"[网络检查] ✓ 成功连接到 {host}:{port}")
+        except asyncio.TimeoutError:
+            print(f"[网络检查] ✗ 连接超时: {host}:{port}")
+        except ConnectionRefusedError:
+            print(f"[网络检查] ✗ 连接被拒绝: {host}:{port}")
+        except Exception as e:
+            print(f"[网络检查] ✗ 连接失败: {host}:{port} - {str(e)}")
+    
+    # 测试DNS解析
+    try:
+        import socket
+        socket.getaddrinfo("www.taobao.com", 443)
+        print("[网络检查] ✓ DNS解析正常")
+    except Exception as e:
+        print(f"[网络检查] ✗ DNS解析失败: {str(e)}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     # 启动时
     print("正在启动应用...")
+    
+    # 检查网络连通性（群晖容器环境需要）
+    await _check_network_connectivity()
 
     # 重置所有任务状态为停止
     task_repo = JsonTaskRepository()
