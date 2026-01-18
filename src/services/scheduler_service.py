@@ -97,7 +97,9 @@ class SchedulerService:
             jobs = self.scheduler.get_jobs()
             print(f"  -> 成功加载 {len(jobs)} 个定时任务")
             for job in jobs:
-                print(f"     - {job.name} (ID: {job.id}, 下次执行: {job.next_run_time})")
+                # 安全获取下次执行时间，避免AttributeError
+                next_run = getattr(job, 'next_run_time', '无')
+                print(f"     - {job.name} (ID: {job.id}, 下次执行: {next_run})")
         except Exception as e:
             print(f"[错误] 重新加载定时任务失败: {str(e)}")
             import traceback
