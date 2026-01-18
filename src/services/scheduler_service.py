@@ -83,7 +83,7 @@ class SchedulerService:
                         replace_existing=True,
                         # 添加任务执行超时保护
                         max_instances=1,
-                        misfire_grace_time=300  # 任务错过执行的宽限期延长到5分钟
+                        misfire_grace_time=30  # 任务错过执行的宽限期延长到5分钟
                     )
                     print(f"     ✓ 已为任务 '{task.task_name}' 添加定时规则: '{task.cron}'")
                 except ValueError as e:
