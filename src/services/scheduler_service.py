@@ -23,7 +23,7 @@ class SchedulerService:
         self.process_service = process_service
         # 配置日志记录器，捕获所有调度器事件
         self.scheduler.add_listener(self._scheduler_listener)
-        self.scheduler.configure(job_defaults={'misfire_grace_time': 300})
+        self.scheduler.configure(job_defaults={'misfire_grace_time': 30})
 
     def start(self):
         """启动调度器"""
