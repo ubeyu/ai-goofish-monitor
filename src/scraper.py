@@ -732,14 +732,14 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
 
                                 # 调用核心函数采集卖家信息
                                 user_profile_data = {}
-                                user_id = await safe_get(seller_do, 'sellerId')
-                                if user_id:
-                                    # 新的、高效的调用方式:
-                                    user_profile_data = await scrape_user_profile(context, str(user_id))
-                                else:
-                                    print("   [警告] 未能从详情API中获取到卖家ID。")
-                                user_profile_data['卖家芝麻信用'] = zhima_credit_text
-                                user_profile_data['卖家注册时长'] = registration_duration_text
+                                # user_id = await safe_get(seller_do, 'sellerId')
+                                # if user_id:
+                                #     # 新的、高效的调用方式:
+                                #     user_profile_data = await scrape_user_profile(context, str(user_id))
+                                # else:
+                                #     print("   [警告] 未能从详情API中获取到卖家ID。")
+                                # user_profile_data['卖家芝麻信用'] = zhima_credit_text
+                                # user_profile_data['卖家注册时长'] = registration_duration_text
 
                                 # 构建基础记录
                                 final_record = {
@@ -747,7 +747,7 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
                                     "搜索关键字": keyword,
                                     "任务名称": task_config.get('task_name', 'Untitled Task'),
                                     "商品信息": item_data,
-                                    "卖家信息": user_profile_data
+                                    # "卖家信息": user_profile_data
                                 }
 
                                 # --- START: Real-time AI Analysis & Notification ---
@@ -757,23 +757,42 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
                                 if SKIP_AI_ANALYSIS:
                                     log_time("环境变量 SKIP_AI_ANALYSIS 已设置，跳过AI分析并直接发送通知...")
                                     # 下载图片
-                                    image_urls = item_data.get('商品图片列表', [])
-                                    downloaded_image_paths = await download_all_images(item_data['商品ID'], image_urls, task_config.get('task_name', 'default'))
+                                    #image_urls = item_data.get('商品图片列表', [])
+                                    #downloaded_image_paths = await download_all_images(item_data['商品ID'], image_urls, task_config.get('task_name', 'default'))
 
                                     # 删除下载的图片文件，节省空间
-                                    for img_path in downloaded_image_paths:
-                                        try:
-                                            if os.path.exists(img_path):
-                                                os.remove(img_path)
-                                                print(f"   [图片] 已删除临时图片文件: {img_path}")
-                                        except Exception as e:
-                                            print(f"   [图片] 删除图片文件时出错: {e}")
+                                    #for img_path in downloaded_image_paths:
+                                    #    try:
+                                    #        if os.path.exists(img_path):
+                                    #            os.remove(img_path)
+                                    #            print(f"   [图片] 已删除临时图片文件: {img_path}")
+                                    #    except Exception as e:
+                                    #        print(f"   [图片] 删除图片文件时出错: {e}")
 
                                     # 直接发送通知，将所有商品标记为推荐
                                     log_time("商品已跳过AI分析，准备发送通知...")
                                     await send_ntfy_notification(item_data, "商品已跳过AI分析，直接通知")
                                 else:
                                     log_time(f"开始对商品 #{item_data['商品ID']} 进行实时AI分析...")
+                                    
+                                    user_id = await safe_get(seller_do, 'sellerId')
+                                    if user_id:
+                                        # 新的、高效的调用方式:
+                                        user_profile_data = await scrape_user_profile(context, str(user_id))
+                                    else:
+                                        print("   [警告] 未能从详情API中获取到卖家ID。")
+                                    user_profile_data['卖家芝麻信用'] = zhima_credit_text
+                                    user_profile_data['卖家注册时长'] = registration_duration_text
+                                    
+                                # 构建基础记录
+                                    final_record = {
+                                        # "爬取时间": datetime.now().isoformat(),
+                                        # "搜索关键字": keyword,
+                                        # "任务名称": task_config.get('task_name', 'Untitled Task'),
+                                        # "商品信息": item_data,
+                                        "卖家信息": user_profile_data
+                                    }
+
                                     # 1. Download images
                                     image_urls = item_data.get('商品图片列表', [])
                                     downloaded_image_paths = await download_all_images(item_data['商品ID'], image_urls, task_config.get('task_name', 'default'))
