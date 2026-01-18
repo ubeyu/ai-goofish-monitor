@@ -13,8 +13,17 @@ class SchedulerService:
     """调度服务"""
 
     def __init__(self, process_service: ProcessService):
+        import os
+        import time
+        print(f"[调度器初始化] RUNNING_IN_DOCKER: {os.getenv('RUNNING_IN_DOCKER')}")
+        print(f"[调度器初始化] TZ环境变量: {os.getenv('TZ')}")
+        print(f"[调度器初始化] 当前时间: {time.strftime('%Y-%m-%d %H:%M:%S %Z%z')}")
+        print(f"[调度器初始化] 创建调度器，时区: Asia/Shanghai")
         self.scheduler = AsyncIOScheduler(timezone="Asia/Shanghai")
         self.process_service = process_service
+        # 配置日志记录器，捕获所有调度器事件
+        self.scheduler.add_listener(self._scheduler_listener)
+        self.scheduler.configure(job_defaults={'misfire_grace_time': 300})
 
     def start(self):
         """启动调度器"""
@@ -68,7 +77,28 @@ class SchedulerService:
 
         print("定时任务加载完成")
 
+    def _scheduler_listener(self, event):
+        """调度器事件监听器"""
+        import datetime
+        event_type = event.code
+        event_map = {
+            1: "调度器启动",
+            2: "调度器停止",
+            3: "作业添加",
+            4: "作业移除",
+            5: "作业修改",
+            6: "作业执行",
+            7: "作业执行成功",
+            8: "作业执行失败",
+            9: "作业执行错过",
+            10: "作业执行暂停",
+            11: "作业执行恢复"
+        }
+        event_name = event_map.get(event_type, f"未知事件 ({event_type})")
+        job_info = f" 作业ID: {event.job_id}, 作业名称: {event.job_name}" if hasattr(event, 'job_id') else ""
+        print(f"[调度器事件] {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {event_name}{job_info}")
+
     async def _run_task(self, task_id: int, task_name: str):
         """执行定时任务"""
-        print(f"定时任务触发: 正在为任务 '{task_name}' 启动爬虫...")
+        print(f"[任务执行] 定时任务触发: 正在为任务 '{task_name}' (ID: {task_id}) 启动爬虫...")
         await self.process_service.start_task(task_id, task_name)
