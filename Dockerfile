@@ -77,7 +77,7 @@ COPY . .
 
 # 创建应用程序需要读写的目录，并设置正确的权限（群晖容器环境需要）
 RUN mkdir -p /app/images /app/jsonl /app/logs /app/state /app/prompts \
-    && chown -R appuser:appuser /app/images /app/jsonl /app/logs /app/state /app/prompts /app/.env \
+    && chown -R appuser:appuser /app/images /app/jsonl /app/logs /app/state /app/prompts \
     && chmod -R 755 /app/images /app/jsonl /app/logs /app/state /app/prompts
 
 # 声明服务运行的端口
