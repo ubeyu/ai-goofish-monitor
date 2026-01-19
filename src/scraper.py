@@ -330,8 +330,21 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
     if not forced_account and not os.path.exists(STATE_FILE) and account_items:
         rotation_settings["account_enabled"] = True
 
+    # 初始化账号池和代理池
     account_pool = RotationPool(account_items, rotation_settings["account_blacklist_ttl"], "account")
-    proxy_pool = RotationPool(parse_proxy_pool(rotation_settings["proxy_pool"]), rotation_settings["proxy_blacklist_ttl"], "proxy")
+    proxy_items = parse_proxy_pool(rotation_settings["proxy_pool"])
+    proxy_pool = RotationPool(proxy_items, rotation_settings["proxy_blacklist_ttl"], "proxy")
+    
+    # 代理池信息日志
+    print(f"[代理池信息] 代理轮换功能: {'已启用' if rotation_settings['proxy_enabled'] else '已禁用'}")
+    print(f"[代理池信息] 代理轮换模式: {rotation_settings['proxy_mode']}")
+    print(f"[代理池信息] 代理池总数量: {len(proxy_items)}")
+    print(f"[代理池信息] 代理池可用数量: {len(proxy_pool.available_items())}")
+    print(f"[代理池信息] 代理黑名单TTL: {rotation_settings['proxy_blacklist_ttl']}秒")
+    if proxy_items:
+        print(f"[代理池信息] 代理列表: {proxy_items}")
+    else:
+        print(f"[代理池信息] 代理列表为空")
 
     selected_account: Optional[RotationItem] = None
     selected_proxy: Optional[RotationItem] = None
@@ -352,10 +365,17 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
     def _select_proxy(force_new: bool = False) -> Optional[RotationItem]:
         nonlocal selected_proxy
         if not rotation_settings["proxy_enabled"]:
+            print(f"[代理选择] 代理轮换功能已禁用，不选择代理")
             return None
         if rotation_settings["proxy_mode"] == "per_task" and selected_proxy and not force_new:
+            print(f"[代理选择] 按任务固定模式，继续使用现有代理: {selected_proxy.value}")
             return selected_proxy
         picked = proxy_pool.pick_random()
+        if picked:
+            print(f"[代理选择] 随机选择代理: {picked.value}")
+            selected_proxy = picked
+        else:
+            print(f"[代理选择] 未找到可用代理，将使用现有代理: {selected_proxy.value if selected_proxy else '无'}")
         return picked or selected_proxy
 
     async def _run_scrape_attempt(state_file: str, proxy_server: Optional[str]) -> int:
@@ -916,20 +936,44 @@ async def scrape_xianyu(task_config: dict, debug_limit: int = 0):
             print(f"账号轮换：使用登录状态 {state_path}")
         if rotation_settings["proxy_enabled"] and proxy_server:
             print(f"IP 轮换：使用代理 {proxy_server}")
+        elif rotation_settings["proxy_enabled"] and not proxy_server:
+            print(f"IP 轮换：代理池已耗尽，无可用代理")
 
         try:
+            print(f"[任务执行] 开始尝试执行任务 (尝试 {attempt}/{attempt_limit})")
+            print(f"[任务执行] 当前使用的代理: {proxy_server if proxy_server else '无'}")
             processed_item_count += await _run_scrape_attempt(state_path, proxy_server)
+            print(f"[任务执行] 任务执行成功，处理了 {processed_item_count} 个商品")
+            if rotation_settings["proxy_enabled"] and proxy_server:
+                print(f"[代理状态] 代理 {proxy_server} 工作正常")
             break
         except RiskControlError as e:
             last_error = str(e)
             print(f"检测到风控或验证触发: {e}")
+            if rotation_settings["proxy_enabled"] and selected_proxy:
+                print(f"[代理状态] 代理 {selected_proxy.value} 被检测到风控，将被添加到黑名单")
             if attempt < attempt_limit:
                 print("将尝试轮换账号/IP 后重试...")
         except Exception as e:
             last_error = f"{type(e).__name__}: {e}"
             print(f"本次尝试失败: {last_error}")
+            if rotation_settings["proxy_enabled"] and selected_proxy:
+                print(f"[代理状态] 代理 {selected_proxy.value} 执行失败，将被添加到黑名单")
             if attempt < attempt_limit:
                 print("将尝试轮换账号/IP 后重试...")
+
+    # 任务完成后的代理池状态
+    if rotation_settings["proxy_enabled"]:
+        available_proxies = proxy_pool.available_items()
+        print(f"\n[代理池状态总结]")
+        print(f"[代理池状态总结] 代理池总数量: {len(proxy_items)}")
+        print(f"[代理池状态总结] 当前可用代理数量: {len(available_proxies)}")
+        print(f"[代理池状态总结] 被黑名单的代理数量: {len(proxy_pool._blacklist)}")
+        if available_proxies:
+            available_proxy_list = [item.value for item in available_proxies]
+            print(f"[代理池状态总结] 可用代理列表: {available_proxy_list}")
+        if proxy_pool._blacklist:
+            print(f"[代理池状态总结] 黑名单中的代理: {list(proxy_pool._blacklist.keys())}")
 
     # 清理任务图片目录
     cleanup_task_images(task_config.get('task_name', 'default'))
