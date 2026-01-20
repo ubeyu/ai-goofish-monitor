@@ -52,6 +52,7 @@ class NotificationSettingsModel(BaseModel):
     GOTIFY_URL: Optional[str] = None
     GOTIFY_TOKEN: Optional[str] = None
     BARK_URL: Optional[str] = None
+    BARK_URLS: Optional[str] = None
     WX_BOT_URL: Optional[str] = None
     TELEGRAM_BOT_TOKEN: Optional[str] = None
     TELEGRAM_CHAT_ID: Optional[str] = None
@@ -89,6 +90,7 @@ async def get_notification_settings():
         "GOTIFY_URL": env_manager.get_value("GOTIFY_URL", ""),
         "GOTIFY_TOKEN": env_manager.get_value("GOTIFY_TOKEN", ""),
         "BARK_URL": env_manager.get_value("BARK_URL", ""),
+        "BARK_URLS": env_manager.get_value("BARK_URLS", ""),
         "WX_BOT_URL": env_manager.get_value("WX_BOT_URL", ""),
         "TELEGRAM_BOT_TOKEN": env_manager.get_value("TELEGRAM_BOT_TOKEN", ""),
         "TELEGRAM_CHAT_ID": env_manager.get_value("TELEGRAM_CHAT_ID", ""),

@@ -287,6 +287,10 @@ watch(selectedPrompt, async (value) => {
               <Input v-model="notificationSettings.BARK_URL" placeholder="https://api.day.app/YOUR_KEY/" />
             </div>
             <div class="grid gap-2">
+              <Label>Bark URLs (多个，逗号分隔)</Label>
+              <Input v-model="notificationSettings.BARK_URLS" placeholder="https://api.day.app/KEY1/,https://api.day.app/KEY2/" />
+            </div>
+            <div class="grid gap-2">
               <Label>Ntfy Topic URL</Label>
               <Input v-model="notificationSettings.NTFY_TOPIC_URL" placeholder="https://ntfy.sh/topic" />
             </div>

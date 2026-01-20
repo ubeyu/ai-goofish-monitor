@@ -262,9 +262,15 @@ async def send_ntfy_notification(product_data, reason):
             safe_print(f"   -> 发送 Gotify 通知时发生未知错误: {e}")
 
     # --- 发送 Bark 通知 ---
+    bark_urls = []
     if BARK_URL:
+        bark_urls.append(BARK_URL)
+    if os.getenv("BARK_URLS"):
+        bark_urls.extend([url.strip() for url in os.getenv("BARK_URLS").split(",") if url.strip()])
+
+    for bark_url in bark_urls:
         try:
-            safe_print(f"   -> 正在发送 Bark 通知...")
+            safe_print(f"   -> 正在发送 Bark 通知到 {bark_url}...")
 
             bark_payload = {
                 "title": notification_title,
@@ -292,18 +298,18 @@ async def send_ntfy_notification(product_data, reason):
             response = await loop.run_in_executor(
                 None,
                 lambda: requests.post(
-                    BARK_URL,
+                    bark_url,
                     json=bark_payload,
                     headers=headers,
                     timeout=10
                 )
             )
             response.raise_for_status()
-            safe_print("   -> Bark 通知发送成功。")
+            safe_print(f"   -> Bark 通知发送成功到 {bark_url}。")
         except requests.exceptions.RequestException as e:
-            safe_print(f"   -> 发送 Bark 通知失败: {e}")
+            safe_print(f"   -> 发送 Bark 通知到 {bark_url} 失败: {e}")
         except Exception as e:
-            safe_print(f"   -> 发送 Bark 通知时发生未知错误: {e}")
+            safe_print(f"   -> 发送 Bark 通知到 {bark_url} 时发生未知错误: {e}")
 
     # --- 发送企业微信机器人通知 ---
     if WX_BOT_URL:

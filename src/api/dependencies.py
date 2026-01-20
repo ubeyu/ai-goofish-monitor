@@ -36,12 +36,19 @@ def get_notification_service() -> NotificationService:
     """获取通知服务实例"""
     clients = [
         NtfyClient(notification_settings.ntfy_topic_url),
-        BarkClient(notification_settings.bark_url),
-        TelegramClient(
-            notification_settings.telegram_bot_token,
-            notification_settings.telegram_chat_id
-        )
+        # 添加多个Bark客户端
     ]
+    
+    # 添加多个Bark客户端
+    for bark_url in notification_settings.get_bark_urls():
+        clients.append(BarkClient(bark_url))
+    
+    # 添加Telegram客户端
+    clients.append(TelegramClient(
+        notification_settings.telegram_bot_token,
+        notification_settings.telegram_chat_id
+    ))
+    
     return NotificationService(clients)
 
 

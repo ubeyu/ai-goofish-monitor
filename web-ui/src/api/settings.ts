@@ -5,6 +5,7 @@ export interface NotificationSettings {
   GOTIFY_URL?: string
   GOTIFY_TOKEN?: string
   BARK_URL?: string
+  BARK_URLS?: string
   WX_BOT_URL?: string
   TELEGRAM_BOT_TOKEN?: string
   TELEGRAM_CHAT_ID?: string

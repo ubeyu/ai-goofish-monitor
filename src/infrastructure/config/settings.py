@@ -58,6 +58,7 @@ class NotificationSettings(_EnvSettings):
     gotify_url: Optional[str] = _env_field(None, "GOTIFY_URL")
     gotify_token: Optional[str] = _env_field(None, "GOTIFY_TOKEN")
     bark_url: Optional[str] = _env_field(None, "BARK_URL")
+    bark_urls: Optional[str] = _env_field(None, "BARK_URLS")
     wx_bot_url: Optional[str] = _env_field(None, "WX_BOT_URL")
     telegram_bot_token: Optional[str] = _env_field(None, "TELEGRAM_BOT_TOKEN")
     telegram_chat_id: Optional[str] = _env_field(None, "TELEGRAM_CHAT_ID")
@@ -79,6 +80,15 @@ class NotificationSettings(_EnvSettings):
             self.telegram_bot_token and self.telegram_chat_id,
             self.webhook_url
         ])
+
+    def get_bark_urls(self) -> List[str]:
+        """获取所有Bark URL列表"""
+        urls = []
+        if self.bark_url:
+            urls.append(self.bark_url)
+        if self.bark_urls:
+            urls.extend([url.strip() for url in self.bark_urls.split(",") if url.strip()])
+        return urls
 
 
 class ScraperSettings(_EnvSettings):
