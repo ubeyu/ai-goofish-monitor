@@ -9,7 +9,7 @@ except ImportError:
     from pydantic import BaseSettings
     _USING_PYDANTIC_SETTINGS = False
 from pydantic import Field
-from typing import Optional
+from typing import Optional, List
 import os
 
 
